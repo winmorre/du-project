@@ -1,13 +1,12 @@
 import traceback
 from typing import Dict
 
-from django.core.exceptions import ObjectDoesNotExist
 import structlog
-
-from repositories.account_repository import AccountRepository
-from helpers import validators_helpers as vh
+from django.core.exceptions import ObjectDoesNotExist
 from errors.account_error import AccountError
+from helpers import validators_helpers as vh
 from models.error_response import ErrorResponse
+from repositories.account_repository import AccountRepository
 
 Logger = structlog.getLogger(__name__)
 
@@ -60,7 +59,7 @@ class AccountService:
         except ObjectDoesNotExist:
             Logger.error("get account error", lookup_field=lookup_field, traceback=traceback.format_exc())
             return ErrorResponse(
-                title="object does not exist",
+                title="Account object does not exist",
                 type="invalid lookup",
                 detail=(
                     "Account object does not exist"
@@ -84,13 +83,13 @@ class AccountService:
                 )
             )
 
-    def delete_account(self, pk: int) -> bool | ErrorResponse:
+    def delete_account(self, lookup_field: int) -> bool | ErrorResponse:
         try:
-            result = self._account_repo.delete_account(pk=pk)
+            result = self._account_repo.delete_account(lookup_field=lookup_field)
             Logger.info("account deleted", account=result)
             return True
         except AccountError:
-            Logger.error("delete account error", pk=pk, traceback=traceback.format_exc())
+            Logger.error("delete account error", pk=lookup_field, traceback=traceback.format_exc())
             return ErrorResponse(
                 type="Invalid lookup",
                 title="Couldn't delete account",
@@ -98,4 +97,55 @@ class AccountService:
                     "Account you are trying to delete does not exist"
                     "Error occurred when trying to delete the account"
                 )
+            )
+
+    def set_password(self, data, account_id=None, account=None):
+        try:
+            updated_account = self._account_repo.set_password(data, account_id, account)
+            return updated_account
+        except AccountError:
+            Logger.error("set password error", data=data, account_id=account_id, traceback=traceback.format_exc())
+            return ErrorResponse(
+                type="account update",
+                title="Couldn't set account password",
+                detail=(),
+            )
+
+    def reset_password(self, data, lookup_field):
+        try:
+            updated_account = self._account_repo.reset_password(data=data, lookup_field=lookup_field)
+            return updated_account
+        except AccountError:
+            Logger.error("reset password error", data=data, lookup_field=lookup_field, traceback=traceback.format_exc())
+            return ErrorResponse(
+                type="account update",
+                title="Couldn't reset account password",
+                detail=(),
+            )
+
+    def change_phone_number(self, data, lookup_field, instance=None):
+        try:
+            updated_account = self._account_repo.change_phone_number(data=data, lookup_field=lookup_field,
+                                                                     instance=instance)
+            return updated_account
+        except AccountError as ac_err:
+            Logger.error("change phone error", data=data, lookup_field=lookup_field, traceback=traceback.format_exc())
+            return ErrorResponse(
+                type="account update",
+                title="Couldn't change phone number of this account",
+                detail=(
+                    str(ac_err.args[0])
+                ),
+            )
+
+    def change_email(self, data, lookup_field):
+        try:
+            updated_account = self._account_repo.change_email(data=data, lookup_field=lookup_field)
+            return updated_account
+        except AccountError:
+            Logger.error("change email error", data=data, lookup_field=lookup_field, traceback=traceback.format_exc())
+            return ErrorResponse(
+                type="account update",
+                title="Couldn't change the email of this account",
+                detail="",
             )
