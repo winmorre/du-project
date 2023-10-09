@@ -1,9 +1,7 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-from django.db.models import JSONField
-
 from account.account_manager import AccountManager
-
+from django.db import models
+from django.db.models import JSONField
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
@@ -26,13 +24,14 @@ class Account(models.Model):
     displayName = models.CharField(_("display name"), max_length=75, db_column="displayName")
     location = models.CharField(_("location"), max_length=70, null=True, blank=True)
     entities = JSONField(_("entities"), default=dict)
+    lastUpdated = models.DateTimeField(_("date joined"), auto_now_add=True, db_column="lastUpdated")
 
     objects = AccountManager()
 
     USERNAME_FIELD = "phone"
     EMAIL_FIELD = "email"
     PHONE_FIELD = "phone"
-    REQUIRED_FIELDS = ["username"]
+    REQUIRED_FIELDS = []
 
     class Meta:
         db_table = "accounts"
