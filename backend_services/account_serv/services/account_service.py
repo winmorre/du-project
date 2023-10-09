@@ -7,13 +7,15 @@ from errors.account_error import AccountError
 from helpers import validators_helpers as vh
 from models.error_response import ErrorResponse
 from repositories.account_repository import AccountRepository
+from repositories.redis_repository import RedisRepository
 
 Logger = structlog.getLogger(__name__)
 
 
 class AccountService:
-    def __init__(self, account_repository: AccountRepository):
+    def __init__(self, account_repository: AccountRepository,redis_repository:RedisRepository):
         self._account_repo = account_repository
+        self._redis_repo = redis_repository
 
     def create_account(self, data: dict):
         try:
@@ -23,6 +25,9 @@ class AccountService:
                 return validated_phone
 
             new_account = self._account_repo.create_account(data=data)
+
+            # save new account to redis
+            self._redis_repo.set_item(item_id=new_account["id"],item=new_account)
 
             return new_account
         except AccountError:
@@ -53,6 +58,7 @@ class AccountService:
 
     def get_account(self, lookup_field: int | str) -> Dict | ErrorResponse:
         try:
+
             _, account_serialized = self._account_repo.get_account(lookup_field=lookup_field)
 
             return account_serialized

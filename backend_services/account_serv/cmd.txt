@@ -1,0 +1,1 @@
+docker run --name pipa-postgres -e POSTGRES_USER=pipa -e POSTGRES_PASSWORD=pipa-secret@ -p 5432:5432 -d postgres
