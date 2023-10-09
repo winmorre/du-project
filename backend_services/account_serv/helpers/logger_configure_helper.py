@@ -14,7 +14,7 @@ def configure_logger():
         TracerProvider(resource=Resource.create({SERVICE_NAME: settings.JAEGER_PARAMS.get("service_name")}))
     )
 
-    tracing_configuration(trace_log_file_path=settings.AUTH_SERVICE_TRACE_PATH, jaeger_params=settings.JAEGER_PARAMS)
+    tracing_configuration(trace_log_file_path=settings.ACCOUNT_SERVICE_TRACE_PATH, jaeger_params=settings.JAEGER_PARAMS)
 
     if not settings.DEBUG:
         warnings.filterwarnings("ignore", module="dataclass")

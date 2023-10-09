@@ -1,8 +1,9 @@
-from factories.view_factory import ViewFactory
+# from factories.view_factory import ViewFactory
 from rest_framework import routers
+from account.views import AccountViewSet
 
 router = routers.DefaultRouter()
-router.register("", ViewFactory.create_account_viewset(), basename="")
+router.register("", AccountViewSet, basename="")
 
 urlpatterns = []
 

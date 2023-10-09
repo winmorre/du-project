@@ -24,7 +24,7 @@ class Account(models.Model):
     displayName = models.CharField(_("display name"), max_length=75, db_column="displayName")
     location = models.CharField(_("location"), max_length=70, null=True, blank=True)
     entities = JSONField(_("entities"), default=dict)
-    lastUpdated = models.DateTimeField(_("date joined"), auto_now_add=True, db_column="dateJoined")
+    lastUpdated = models.DateTimeField(_("date joined"), auto_now_add=True, db_column="lastUpdated")
 
     objects = AccountManager()
 

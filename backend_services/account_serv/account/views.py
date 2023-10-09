@@ -16,6 +16,7 @@ from rest_framework_simplejwt.views import TokenViewBase
 from serializers.account_serializer import AccountSerializer
 from serializers.token_serializer import TokenObtainPairSerializer
 from services.account_service import AccountService
+from factories.service_factory import ServiceFactory
 
 Logger = structlog.getLogger(__name__)
 tracer = trace.get_tracer(__name__)
@@ -25,7 +26,7 @@ tracer = trace.get_tracer(__name__)
 
 
 class AccountViewSet(ModelViewSet):
-    def __init__(self, account_service: AccountService):
+    def __init__(self, account_service: AccountService = ServiceFactory.create_account_service()):
         super().__init__()
         self.account_service = account_service
 

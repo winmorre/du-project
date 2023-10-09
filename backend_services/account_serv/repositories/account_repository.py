@@ -30,7 +30,7 @@ class AccountRepository:
         self._change_phone_serializer = change_phone_serializer
         self._email_serializer = email_serializer
 
-    def create_account(self, data: dict):
+    def create_account(self, data: dict,using='default'):
         serializer = self._account_create_serializer(data=data)
 
         try:
@@ -38,32 +38,32 @@ class AccountRepository:
                 raise AccountError(str(serializer.errors))
 
             pk = id_gen.get_id()
-            serializer.save(id=pk)
+            serializer.save(id=pk, using=using)
 
             return serializer.data
         except Exception:
             raise AccountError(traceback.format_exc())
 
-    def get_account(self, lookup_field) -> Tuple[Account, Dict]:
+    def get_account(self, lookup_field,using='default') -> Tuple[Account, Dict]:
         try:
             filter_query = Q(email=lookup_field) | Q(phone=lookup_field) | Q(id=lookup_field)
 
-            account_instance = self._account.objects.filter(filter_query).first()
+            account_instance = self._account.objects.using(using).filter(filter_query).first()
             serialized = self._account_serializer(account_instance)
             return account_instance, serialized.data
         except Exception:
             raise ObjectDoesNotExist()
 
-    def get_account_by_id(self, account_id):
+    def get_account_by_id(self, account_id,using='default'):
         try:
-            account = self._account.objects.get(id=account_id)
+            account = self._account.objects.using(using).get(id=account_id)
             return account
         except Exception:
             raise AccountError(traceback.format_exc())
 
-    def get_all_accounts(self, page=0, limit=500):
+    def get_all_accounts(self, page=0, limit=500,using='default'):
         try:
-            accounts = self._account.objects.all()
+            accounts = self._account.objects.using(using).all()
             _paginator = Paginator(accounts, limit)
 
             page_obj = _paginator.get_page(page)
