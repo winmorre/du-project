@@ -1,0 +1,2 @@
+class BinError(Exception):
+    pass
