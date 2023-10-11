@@ -3,10 +3,11 @@ import datetime
 from pydantic import BaseModel
 from dataclasses_json import dataclass_json
 from dataclasses import dataclass
+from .place_schema import PlaceSchema
 
 
 class BinBase(BaseModel):
-    location: dict
+    location: PlaceSchema
     owner: str
     capacity: int
 
