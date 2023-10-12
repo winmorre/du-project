@@ -34,3 +34,11 @@ class DispatchSchema(DispatchBase):
     rescheduled: bool
     rescheduled_by: int | None
     rescheduled_reason: str | None
+    fulfilled_by: int | None
+    confirmed_at: datetime.datetime | None
+    dispatch_confirmed: bool
+    rescheduled_at: datetime.datetime | None
+    cancelled: bool
+    cancelled_at: datetime.datetime | None
+    cancelled_by: int | None
+    cancelled_reason: str | None

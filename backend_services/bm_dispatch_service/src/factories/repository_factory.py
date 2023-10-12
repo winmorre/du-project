@@ -9,3 +9,14 @@ class RepositoryFactory:
         if not db_session:
             db_session = postgres_helpers.get_db()
         return BinRepository(db_session=db_session, bin_model=Bin)
+
+    @staticmethod
+    def create_dispatch_repository(db_session=None):
+        from src.helpers import postgres_helpers
+        if not db_session:
+            db_session = postgres_helpers.get_db()
+
+        from src.models.dispatch import Dispatch
+        from src.repositories.dispatch_repository import DispatchRepository
+
+        return DispatchRepository(db_session=db_session, dispatch_model=Dispatch)
