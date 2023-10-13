@@ -20,10 +20,10 @@ class Bin(Base):
     __tablename__ = "bin"
 
     id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(DateTime, server_default=func.now())
+    createdAt = Column(DateTime, server_default=func.now(), name="createdAt")
     status = Column(Integer)
     location = Column(JSON)  # this will have the type of Place
     owners = Column(String)
     capacity = Column(Integer)  # this might represent the volume of the bin
     zone = Column(String, nullable=True)
-    bin_id = Column(String, unique=True, nullable=True)
+    binId = Column(String, unique=True, nullable=True, name="binId")

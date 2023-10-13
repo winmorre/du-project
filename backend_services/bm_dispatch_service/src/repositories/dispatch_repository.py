@@ -1,11 +1,14 @@
 import datetime
 from typing import Type, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
+from sqlalchemy import and_
 
 from src.models.dispatch import Dispatch
 from src.schemas.dispatch_schema import DispatchSchema
 from src.errors.dispatch_error import DispatchError
 from src.schemas.place_schema import PlaceSchema
+
+TRUTHY = True
 
 
 class DispatchRepository:
@@ -112,18 +115,20 @@ class DispatchRepository:
             if dispatch is None:
                 raise DispatchError(f"Ooops!! dispatch object with ID {pk} does not exist")
 
-            dispatch.scheduled_for = schedule_at
+            dispatch.scheduledFor = schedule_at
+            dispatch.scheduled = True
             self._db.commit()
             return dispatch
         except Exception:
             raise DispatchError(f"Ooops!! could not set schedule date for dispatch with id {pk}")
 
-    def assign_dispatch(self, pk, assignee: int) -> Dispatch:
+    def assign_dispatch(self, pk, assignee: int, assigned_at: datetime.datetime) -> Dispatch:
         """
         assign_dispatch
         Assign someone to a dispatch
         :param pk
         :param assignee
+        :param assigned_at
         :return Dispatch
         """
         try:
@@ -131,7 +136,8 @@ class DispatchRepository:
             if dispatch is None:
                 raise DispatchError(f"Ooops!! dispatch object with ID {pk} does not exist")
 
-            dispatch.assigned_to = assignee
+            dispatch.assignedTo = assignee
+            dispatch.assignedAt = assigned_at
             self._db.commit()
             return dispatch
         except Exception:
@@ -152,8 +158,8 @@ class DispatchRepository:
                 raise DispatchError(f"Ooops!! dispatch object with ID {pk} does not exist")
 
             dispatch.fulfilled = True
-            dispatch.fulfilled_at = fulfilled_at
-            dispatch.fulfilled_by = fulfilled_by
+            dispatch.fulfilledAt = fulfilled_at
+            dispatch.fulfilledBy = fulfilled_by
             self._db.commit()
             return dispatch
         except Exception:
@@ -173,22 +179,24 @@ class DispatchRepository:
             if dispatch is None:
                 raise DispatchError(f"Ooops!! dispatch object with ID {pk} does not exist")
 
-            dispatch.confirmed_by = confirm_by
-            dispatch.dispatch_confirmed = True
-            dispatch.confirmed_at = confirmed_at
+            dispatch.confirmedBy = confirm_by
+            dispatch.dispatchConfirmed = True
+            dispatch.confirmedAt = confirmed_at
             self._db.commit()
             return dispatch
         except Exception:
             raise DispatchError("Oooops!! Error occurred while confirming dispatch")
 
-    def reschedule_dispatch(self, pk: int, reschedule_reason: str, reschedule_by: int,
-                            rescheduled_at: datetime.datetime) -> Dispatch:
+    def reschedule_dispatch(
+        self, pk: int, reschedule_reason: str, reschedule_by: int, rescheduled_at: datetime.datetime,
+    ) -> Dispatch:
         """
         reschedule_dispatch
         Reschedule a dispatch request
         :param pk
         :param reschedule_reason
         :param reschedule_by
+        :param rescheduled_at
         :return: Dispatch
         """
         try:
@@ -197,9 +205,9 @@ class DispatchRepository:
                 raise DispatchError(f"Ooops!! dispatch object with ID {pk} does not exist")
 
             dispatch.rescheduled = True
-            dispatch.rescheduled_reason = reschedule_reason
-            dispatch.rescheduled_by = reschedule_by
-            dispatch.rescheduled_at = rescheduled_at
+            dispatch.rescheduledReason = reschedule_reason
+            dispatch.rescheduledBy = reschedule_by
+            dispatch.rescheduledAt = rescheduled_at
             self._db.commit()
             return dispatch
         except Exception:
@@ -222,14 +230,171 @@ class DispatchRepository:
                 raise DispatchError(f"Ooops!! dispatch object with ID {pk} does not exist")
 
             dispatch.cancelled = True
-            dispatch.cancel_reason = cancel_reason
-            dispatch.cancelled_by = cancelled_by
-            dispatch.cancelled_at = cancelled_at
+            dispatch.cancelledReason = cancel_reason
+            dispatch.cancelledBy = cancelled_by
+            dispatch.cancelledAt = cancelled_at
 
             self._db.commit()
             return dispatch
         except Exception:
             raise DispatchError("Error occurred while trying to cancel dispatch")
+
+    def fetch_scheduled_dispatch_for_zone(self, zone: str) -> Query[Type[Dispatch]]:
+        """
+        Fetch all scheduled request that has not been fulfilled or cancelled for a zone
+        :param zone
+        :return: filter
+        """
+        try:
+            dispatches = self._db.query(self._dispatch).filter(
+                and_(
+                    self._dispatch.zone == zone,
+                    self._dispatch.scheduled == TRUTHY,
+                )
+            )
+            return dispatches
+        except Exception:
+            raise DispatchError(f"Error occurred fetching dispatches for zone {zone}")
+
+    def fetch_scheduled_dispatch_by_assignee(self, assignee: int) -> Query[Type[Dispatch]]:
+        try:
+            return self._db.query(self._dispatch).filter(
+                and_(self._dispatch.assignedTo == assignee,
+                     self._dispatch.scheduled == TRUTHY),
+            )
+        except Exception:
+            raise DispatchError(f"Could not fetch dispatches assigned to {assignee}")
+
+    def fetch_all_dispatches_for_zone(self, zone: str):
+        try:
+            return self._db.query(self._dispatch).get(self._dispatch.zone == zone)
+        except Exception:
+            raise DispatchError(f"Could fetch all dispatches for zone {zone}")
+
+    def fetch_all_scheduled_dispatch(self) -> List[Type[Dispatch]]:
+        try:
+            return self._db.query(self._dispatch).get(self._dispatch.scheduled == TRUTHY)
+        except Exception:
+            raise DispatchError("Couldn't fetch all scheduled dispatches")
+
+    def fetch_all_scheduled_dispatch_by_date(self, date: datetime.datetime):
+        try:
+            return self._db.query(self._dispatch).filter(
+                and_(
+                    self._dispatch.scheduled == TRUTHY,
+                    self._dispatch.scheduledFor == date,
+                )
+            )
+        except Exception:
+            raise DispatchError(f"Couldn't fetch all scheduled dispatches for {date}")
+
+    def fetch_all_scheduled_dispatches_for_date_range(self, start: datetime.datetime, end: datetime.datetime):
+        try:
+            return self._db.query(self._dispatch).filter(and_(
+                self._dispatch.scheduled == TRUTHY,
+                and_(self._dispatch.scheduledFor >= start, self._dispatch.scheduledFor <= end)
+            ))
+        except Exception:
+            raise DispatchError(f"Couldn't fetch all dispatches for specified date range {start} to {end}")
+
+    def fetch_all_dispatches_for_date_range(self, start: datetime.datetime, end: datetime.datetime):
+        try:
+            return self._db.query(self._dispatch).filter(and_(
+                self._dispatch.createdAt >= start,
+                self._dispatch.createdAt <= end,
+            ))
+        except Exception:
+            raise DispatchError(f"Couldn't fetch dispatches for specified date range {start} to {end}")
+
+    def fetch_all_assigned_dispatches(self):
+        try:
+            return self._db.query(self._dispatch).filter(and_(
+                self._dispatch.assigned == TRUTHY
+            ))
+        except Exception:
+            raise DispatchError("Couldn't fetch all assigned dispatches")
+
+    def fetch_fulfilled_dispatches(self):
+        try:
+            return self._db.query(self._dispatch).filter(and_(
+                self._dispatch.fulfilled == TRUTHY
+            ))
+        except Exception:
+            raise DispatchError("Couldn't fetch all fulfilled dispatches")
+
+    def fetch_all_fulfilled_dispatches_for_date_range(self, start: datetime.datetime, end: datetime.datetime):
+        try:
+            return self._db.query(self._dispatch).filter(and_(
+                self._dispatch.fulfilled == TRUTHY,
+                and_(
+                    self._dispatch.fulfilledAt >= start,
+                    self._dispatch.fulfilledAt <= end,
+                )
+            ))
+        except Exception:
+            raise DispatchError(f"Couldn't fetch all fulfilled dispatches for date range {start} to {end}")
+
+    def fetch_all_confirmed_fulfilled_dispatches(self):
+        try:
+            return self._db.query(self._dispatch).filter(and_(
+                self._dispatch.dispatchConfirmed == TRUTHY
+            ))
+        except Exception:
+            raise DispatchError("Couldn't fetch all confirmed fulfilled dispatches")
+
+    def fetch_all_confirmed_fulfilled_dispatches_for_date_range(self, start: datetime.datetime, end: datetime.datetime):
+        try:
+            return self._db.query(self._dispatch).filter(and_(
+                self._dispatch.dispatchConfirmed == TRUTHY,
+                and_(
+                    self._dispatch.confirmedAt >= start,
+                    self._dispatch.confirmedAt <= end,
+                )
+            ))
+        except Exception:
+            raise DispatchError(f"Couldn't fetch all confirmed fulfilled dispatches for date range {start} to {end}")
+
+    def fetch_all_cancelled_dispatches(self):
+        try:
+            return self._db.query(self._dispatch).filter(
+                and_(self._dispatch.cancelled == TRUTHY)
+            )
+        except Exception:
+            raise DispatchError("Couldn't fetch all cancelled dispatches")
+
+    def fetch_all_cancelled_dispatches_for_zone(self, zone: str):
+        try:
+            return self._db.query(self._dispatch).filter(
+                and_(self._dispatch.zone == zone, self._dispatch.cancelled == TRUTHY)
+            )
+        except Exception:
+            raise DispatchError("Couldn't get all cancelled dispatches")
+
+    def fetch_all_cancelled_dispatches_by_zone_for_date_range(self, zone: str, start, end):
+        try:
+            return self._db.query(self._dispatch).filter(
+                and_(
+                    self._dispatch.cancelled == TRUTHY,
+                    self._dispatch.zone == zone,
+                    and_(
+                        self._dispatch.cancelledAt >= start,
+                        self._dispatch.cancelledAt <= end,
+                    )
+                )
+            )
+        except Exception:
+            raise DispatchError("Couldn't fetch all cancelled dispatches")
+
+    def fetch_all_cancelled_dispatches_for_date_range(self, start, end):
+        try:
+            return self._db.query(self._dispatch).filter(
+                and_(self._dispatch.cancelled == TRUTHY, and_(
+                    self._dispatch.cancelledAt >= start,
+                    self._dispatch.cancelledAt <= end,
+                ))
+            )
+        except Exception:
+            raise DispatchError("Couldn't fetch dispatches")
 
     def _get_dispatch_by_id(self, pk) -> Dispatch | None:
         return self._db.query(self._dispatch).get(self._dispatch.id == pk)

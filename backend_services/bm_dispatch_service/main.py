@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from src.helpers.log_configure import configure_logger
-from src.routers import bin_route
+from src.routers import bin_route, dispatch_route
 
 app = FastAPI(title='pipa', version="0.1.0")
 
@@ -12,3 +12,4 @@ async def start():
 
 
 app.include_router(bin_route.bin_router)
+app.include_router(dispatch_route.dispatch_router)

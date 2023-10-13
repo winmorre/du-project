@@ -20,3 +20,11 @@ class RepositoryFactory:
         from src.repositories.dispatch_repository import DispatchRepository
 
         return DispatchRepository(db_session=db_session, dispatch_model=Dispatch)
+
+    @staticmethod
+    def create_redis_repository():
+        from src.helpers.redis_helpers import create_redis_connection
+        from src.repositories.redis_repository import RedisRepository
+        connection = create_redis_connection()
+
+        return RedisRepository(redis=connection)

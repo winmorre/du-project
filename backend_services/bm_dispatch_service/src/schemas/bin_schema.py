@@ -22,10 +22,10 @@ class BinCreate(BinBase):
 @dataclass_json
 class BinSchema(BinBase):
     id: int
-    created_at: datetime.datetime
+    createdAt: datetime.datetime
     status: int
     zone: dict
-    bin_id: str
+    binId: str
 
     class Config:
         orm_mode = True
