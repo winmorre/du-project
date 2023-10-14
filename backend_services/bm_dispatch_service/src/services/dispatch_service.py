@@ -3,6 +3,7 @@ import traceback
 from typing import List, Type, Any
 
 import structlog
+from fastapi import BackgroundTasks
 
 from src.models.dispatch import Dispatch
 from src.schemas.dispatch_schema import (
@@ -251,7 +252,9 @@ class DispatchService:
                 )
             )
 
-    async def get_scheduled_dispatches_by_zone(self, zone: str) -> list[Any] | list[Type[Dispatch]] | ErrorResponse:
+    async def get_scheduled_dispatches_by_zone(
+        self, zone: str, tasks: BackgroundTasks
+    ) -> list[Any] | list[Type[Dispatch]] | ErrorResponse:
         try:
             scheduled_dispatches = await self._redis_repo.get_item(item_id=zone)
             if scheduled_dispatches is not None:
@@ -259,7 +262,7 @@ class DispatchService:
             scheduled_dispatches = self._dispatch_repo.fetch_scheduled_dispatch_for_zone(zone=zone)
             if len(list(scheduled_dispatches)) > 0:
                 as_list = [a.asdict() for a in scheduled_dispatches]
-                await self._redis_repo.set_item(item_id=zone, item=as_list)
+                tasks.add_task(self._redis_repo.set_item, item_id=zone, item=as_list)
             return list(scheduled_dispatches)
         except DispatchError as de:
             Logger.error("get scheduled request by zone error", zone=zone, traceback=traceback.format_exc())
@@ -274,11 +277,13 @@ class DispatchService:
     # we can also get scheduled request for a radius of area
     # that will mean we will need to change how we store locations
 
-    async def get_scheduled_dispatches_by_assignee(self, assignee: int) -> list[Any] | \
-                                                                           list[Type[Dispatch]] | ErrorResponse:
+    async def get_scheduled_dispatches_by_assignee(
+        self, assignee: int, tasks: BackgroundTasks
+    ) -> list[Any] | list[Type[Dispatch]] | ErrorResponse:
         """
         Get all dispatches assigned to the assignee id
         :param assignee
+        :param tasks
         :return: List[Dispatch] | ErrorResponse
         """
         try:
@@ -290,7 +295,7 @@ class DispatchService:
 
             if len(list(dispatches)) > 0:
                 as_list = [Dispatch.from_dict(d) for d in dispatches]
-                await self._redis_repo.set_item(item_id=str(assignee), item=as_list)
+                tasks.add_task(self._redis_repo.set_item, item_id=str(assignee), item=as_list)
 
             return list(dispatches)
         except DispatchError as de:
@@ -514,3 +519,6 @@ class DispatchService:
 
     def _get_current_time(self) -> datetime.datetime:
         return datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc, microsecond=0)
+
+    # assign dispatch
+    # fetch available stuffs

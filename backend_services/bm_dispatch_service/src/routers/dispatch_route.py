@@ -1,6 +1,6 @@
 import datetime
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, BackgroundTasks
 
 from src.factories.service_factory import ServiceFactory
 from src.schemas.error_response import ErrorResponse
@@ -98,16 +98,16 @@ def cancel_dispatch_request(pk: int):
 
 
 @dispatch_router.get("/scheduled-by-zone/{zone}")
-async def get_scheduled_dispatches_by_zone(zone: str):
-    result = await DISPATCH_SERVICE.get_scheduled_dispatches_by_zone(zone=zone)
+async def get_scheduled_dispatches_by_zone(zone: str, background_tasks: BackgroundTasks):
+    result = await DISPATCH_SERVICE.get_scheduled_dispatches_by_zone(zone=zone, tasks=background_tasks)
     if rh.check_error_response_instance(result):
         return rh.route_error_response(detail=result.asdict())
     return rh.route_success_response(content=result.asdict())
 
 
 @dispatch_router.get("/scheduled-by-assignee/{assignee}")
-async def get_scheduled_dispatches_by_assignee(assignee: int):
-    result = await DISPATCH_SERVICE.get_scheduled_dispatches_by_assignee(assignee=assignee)
+async def get_scheduled_dispatches_by_assignee(assignee: int, background_task: BackgroundTasks):
+    result = await DISPATCH_SERVICE.get_scheduled_dispatches_by_assignee(assignee=assignee, tasks=background_task)
     if rh.check_error_response_instance(result):
         return rh.route_error_response(detail=result.asdict())
     return rh.route_success_response(content=result.asdict())

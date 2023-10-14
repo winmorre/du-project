@@ -10,6 +10,8 @@ CASSANDRA_PREFIX = "CASSANDRA_"
 AWS = "AWS_"
 JAEGER = "JAEGER_"
 MYSQL_PREFIX = "MYSQL_"
+KAFKA_PREFIX = "KAFKA_"
+RABBIT_PREFIX = "RABBIT_"
 
 Logger = structlog.getLogger(__name__)
 
@@ -43,9 +45,46 @@ class Settings(BaseSettings):
     account_service_grpc_server_address = os.getenv("Account_Service_GRPC_SERVER_ADDRESS", "localhost:50051")
     mysql_user = os.getenv(f"{MYSQL_PREFIX}USER", "")
     mysql_password = os.getenv(f"{MYSQL_PREFIX}PASSWORD", "")
+    kafka_post_topic = "post"
+    kafka_servers = os.environ.get(f"{KAFKA_PREFIX}SERVERS") or "http://localhost:2920,http://localhost:10900"
+    kafka_ssl = "",
+    kafka_consumer_group = "new-dispatch-consumer-group"
+    kafka_schema_url = "http://localhost:8081"
+    rabbitmq_port = int(os.environ.get(f"{RABBIT_PREFIX}PORT")) or 5672
+    rabbitmq_host = os.environ.get(f"{RABBIT_PREFIX}HOST") or 'localhost'
 
 
 @lru_cache()
 def get_settings() -> Settings:
     Logger.info("Loading config settings from the environment")
     return Settings()
+
+
+def _common_kafka_config():
+    conf = get_settings()
+    return {
+        "bootstrap.servers": conf.kafka_servers,
+        "schema.registry.url": conf.kafka_schema_url,
+        "dispatch.topic": conf.kafka_post_topic,
+    }
+
+
+def producer_config():
+    # settings = get_settings()
+    common = _common_kafka_config()
+    return common
+
+
+def consumer_config():
+    settings = get_settings()
+    common = _common_kafka_config()
+
+    common["group.id"] = settings.kafka_consumer_group
+    return common
+
+
+def get_schema_config():
+    settings = get_settings()
+    return {
+        "url": settings.kafka_schema_url
+    }
