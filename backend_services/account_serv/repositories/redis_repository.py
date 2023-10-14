@@ -1,8 +1,8 @@
 import json
 from typing import Optional
 
-from redis.asyncio import Redis
 from django.conf import settings
+from redis.asyncio import Redis
 
 _settings = settings.REDIS_CONFIG
 

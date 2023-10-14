@@ -13,7 +13,7 @@ Logger = structlog.getLogger(__name__)
 
 
 class AccountService:
-    def __init__(self, account_repository: AccountRepository,redis_repository:RedisRepository):
+    def __init__(self, account_repository: AccountRepository, redis_repository:RedisRepository):
         self._account_repo = account_repository
         self._redis_repo = redis_repository
 

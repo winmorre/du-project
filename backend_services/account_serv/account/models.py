@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import JSONField
 from django.utils.translation import gettext_lazy as _
 
+
 # Create your models here.
 
 class Account(models.Model):
@@ -25,6 +26,9 @@ class Account(models.Model):
     location = models.CharField(_("location"), max_length=70, null=True, blank=True)
     entities = JSONField(_("entities"), default=dict)
     lastUpdated = models.DateTimeField(_("date joined"), auto_now_add=True, db_column="lastUpdated")
+    isStaff = models.BooleanField(_("is staff"), default=False)
+    team = models.IntegerField(_("team"), null=True, blank=True)
+    isTeamLead = models.BooleanField(_("is team lead"), default=False)
 
     objects = AccountManager()
 
@@ -34,9 +38,22 @@ class Account(models.Model):
     REQUIRED_FIELDS = []
 
     class Meta:
-        db_table = "accounts"
+        db_table = "account"
         verbose_name = _("accounts")
         ordering = ["-dateJoined"]
 
     def __str__(self) -> str:
         return f"{self.id}"
+
+
+class Team(models.Model):
+    id = models.IntegerField(_("id"), primary_key=True, editable=False, db_index=True)
+    teamName = models.CharField(_("team name"), max_length=245, null=True, blank=True, db_index=True,unique=True)
+    assignedZones = models.CharField(_("assigned zones"), max_length=245, null=True, blank=True)
+    available = models.BooleanField(_("available"), default=True)
+    createdAt = models.DateTimeField(_("created at"), auto_now_add=True, db_column="createdAt")
+
+    class Meta:
+        db_table = "team"
+        verbose_name = _("teams")
+        ordering = ["-createdAt"]

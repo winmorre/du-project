@@ -20,3 +20,15 @@ class RepositoryFactory:
             change_phone_serializer=ChangePhoneSerializer,
             set_password_serializer=SetPasswordSerializer,
         )
+
+    @staticmethod
+    def create_team_repository():
+        from account.models import Team
+        from repositories.team_repository import TeamRepository
+        from serializers.team_serializer import TeamSerializer, TeamCreateSerializer
+
+        return TeamRepository(
+            team=Team(),
+            team_serializer=TeamSerializer,
+            team_create_serializer=TeamCreateSerializer,
+        )

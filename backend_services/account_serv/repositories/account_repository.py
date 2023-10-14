@@ -30,7 +30,7 @@ class AccountRepository:
         self._change_phone_serializer = change_phone_serializer
         self._email_serializer = email_serializer
 
-    def create_account(self, data: dict,using='default'):
+    def create_account(self, data: dict, using='default'):
         serializer = self._account_create_serializer(data=data)
 
         try:
@@ -44,7 +44,7 @@ class AccountRepository:
         except Exception:
             raise AccountError(traceback.format_exc())
 
-    def get_account(self, lookup_field,using='default') -> Tuple[Account, Dict]:
+    def get_account(self, lookup_field, using='default') -> Tuple[Account, Dict]:
         try:
             filter_query = Q(email=lookup_field) | Q(phone=lookup_field) | Q(id=lookup_field)
 
@@ -54,14 +54,14 @@ class AccountRepository:
         except Exception:
             raise ObjectDoesNotExist()
 
-    def get_account_by_id(self, account_id,using='default'):
+    def get_account_by_id(self, account_id, using='default'):
         try:
             account = self._account.objects.using(using).get(id=account_id)
             return account
         except Exception:
             raise AccountError(traceback.format_exc())
 
-    def get_all_accounts(self, page=0, limit=500,using='default'):
+    def get_all_accounts(self, page=0, limit=500, using='default'):
         try:
             accounts = self._account.objects.using(using).all()
             _paginator = Paginator(accounts, limit)
@@ -104,6 +104,9 @@ class AccountRepository:
                 raise AccountError(str(serializer.errors))
 
             setattr(account, Account.PHONE_FIELD, serializer.data["phone"])
+            now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc, microsecond=0)
+            account.lastUpdated = now
+            account.save()
 
             return serializer.data
         except Exception:
@@ -121,7 +124,8 @@ class AccountRepository:
 
             account.set_password(serializer.data["newPassword"])
             now = datetime.datetime.now()
-            account.save(lastUpdated=now)
+            account.lastUpdated = now
+            account.save()
 
             return self._account_serializer(account).data
         except Exception:
@@ -140,7 +144,8 @@ class AccountRepository:
             if account is not None and isinstance(account, Account):
                 account.set_password(serializer.data['newPassword'])
                 now = datetime.datetime.now()
-                account.save(lastUpdated=now)
+                account.lastUpdated = now
+                account.save()
 
                 return self._account_serializer(account).data
 
