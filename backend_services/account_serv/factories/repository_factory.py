@@ -12,7 +12,7 @@ class RepositoryFactory:
                                                     SetPasswordSerializer)
 
         return AccountRepository(
-            account=Account(),
+            account=Account,
             account_serializer=AccountSerializer,
             account_create_serializer=AccountCreateSerializer,
             email_serializer=EmailSerializer,
@@ -23,12 +23,21 @@ class RepositoryFactory:
 
     @staticmethod
     def create_team_repository():
-        from account.models import Team
+        from team.models import Team
         from repositories.team_repository import TeamRepository
         from serializers.team_serializer import TeamSerializer, TeamCreateSerializer
 
         return TeamRepository(
-            team=Team(),
+            team=Team,
             team_serializer=TeamSerializer,
             team_create_serializer=TeamCreateSerializer,
         )
+
+    @staticmethod
+    def create_redis_repository():
+        from repositories.redis_repository import RedisRepository
+        from helpers.redis_helpers import create_redis_connection
+
+        redis_connection = create_redis_connection()
+
+        return RedisRepository(redis=redis_connection)

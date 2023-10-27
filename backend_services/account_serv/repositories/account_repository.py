@@ -18,7 +18,7 @@ from serializers.account_serializer import (AccountCreateSerializer,
 
 
 class AccountRepository:
-    def __init__(self, account: Account, account_serializer: Type[AccountSerializer],
+    def __init__(self, account: Type[Account], account_serializer: Type[AccountSerializer],
                  account_create_serializer: Type[AccountCreateSerializer],
                  set_password_serializer: Type[SetPasswordSerializer], email_serializer: Type[EmailSerializer],
                  password_serializer: Type[PasswordSerializer], change_phone_serializer: Type[ChangePhoneSerializer]):

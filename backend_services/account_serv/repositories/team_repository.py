@@ -1,7 +1,7 @@
 import datetime
 from typing import Type
 
-from account.models import Team
+from team.models import Team
 from helpers import validators_helpers as vh
 from libs.id_gen import id_gen
 from errors.team_error import TeamError
@@ -10,7 +10,7 @@ from serializers.team_serializer import TeamSerializer, TeamCreateSerializer
 
 class TeamRepository:
     def __init__(
-            self, team: Team, team_create_serializer: Type[TeamCreateSerializer],
+            self, team: Type[Team], team_create_serializer: Type[TeamCreateSerializer],
             team_serializer: Type[TeamSerializer],
     ):
         self._team = team
@@ -54,7 +54,7 @@ class TeamRepository:
     def fetch_all_teams(self):
         try:
             teams = self._team.objects.all()
-            return self._team_serializer(teams, many=True)
+            return self._team_serializer(teams, many=True).data
         except Exception:
             raise TeamError("Couldn't fetch all teams")
 
